@@ -17,8 +17,38 @@ const char* keys =
 int main( int argc, char* argv[] )
 {
     CommandLineParser parser( argc, argv, keys );
+
+    cv::Mat camMatrix = cv::Mat::eye(3, 3, CV_64F);
+    cv::Mat distCoeffs = cv::Mat::zeros(1, 5, CV_64F);
+// tango at 960p
+        //  camMatrix.at<double>(0, 0) = 867.601196289;
+        //  camMatrix.at<double>(1, 1) = 867.601196289;
+        //  camMatrix.at<double>(0, 2) = 482.6857910;
+        //  camMatrix.at<double>(1, 2) = 268.82540;
+        //  camMatrix.at<double>(2, 2) = 1;
+// pupil at 720p
+        camMatrix.at<double>(0, 0) = 1200;
+        camMatrix.at<double>(1, 1) = 1200;
+        camMatrix.at<double>(0, 2) = 1280/2;
+        camMatrix.at<double>(1, 2) = 720/2;
+        camMatrix.at<double>(2, 2) = 1;
+        
+        distCoeffs.at<double>(0, 0) = -0.63037088;
+        distCoeffs.at<double>(0, 1) =  0.17767048;
+        distCoeffs.at<double>(0, 2) = -0.00489945;
+        distCoeffs.at<double>(0, 3) = -0.00192122;
+        distCoeffs.at<double>(0, 4) =  0.1757496;
+
+
+
+
+
     Mat img_object = imread( parser.get<String>("input1"), IMREAD_GRAYSCALE );
-    Mat img_scene = imread( parser.get<String>("input2"), IMREAD_GRAYSCALE );
+
+    Mat img_scene_raw = imread( parser.get<String>("input2"), IMREAD_GRAYSCALE );
+    Mat img_scene;
+    cv::undistort(img_scene_raw, img_scene, camMatrix, distCoeffs);
+
     if ( img_object.empty() || img_scene.empty() )
     {
         cout << "Could not open or find the image!\n" << endl;
@@ -27,8 +57,8 @@ int main( int argc, char* argv[] )
     }
     //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
     int minHessian = 400;
-    Ptr<SURF> detector = SURF::create( minHessian );
-   // Ptr<SIFT> detector = SIFT::create( minHessian );
+    //Ptr<SURF> detector = SURF::create( minHessian );
+    Ptr<SIFT> detector = SIFT::create();
     std::vector<KeyPoint> keypoints_object, keypoints_scene;
     Mat descriptors_object, descriptors_scene;
     detector->detectAndCompute( img_object, noArray(), keypoints_object, descriptors_object );
